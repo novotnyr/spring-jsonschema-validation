@@ -13,6 +13,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.AbstractBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.WebRequest;
@@ -24,18 +27,39 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * The argument resolver for @{@link JsonRequestBody}-annotated values.
+ * <p>
+ *     First, the argument value is resolved as if it was annotated via @{@link RequestBody}.
+ *     This is handled by the delegate {@link RequestResponseBodyMethodProcessor}.
+ *     Then, the argument value is validated against JSON schema and then
+ *     either JSON exception is thrown or the corresponding {@link Errors}
+ *     are populated.
+ * </p>
+ */
 public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentResolver {
     private RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor;
 
     private ValidationExceptionMediator validationExceptionMediator = new ValidationExceptionMediator();
 
+    /**
+     * Empty constructor.
+     */
+    public JsonRequestBodyArgumentResolver() {
+        // empty constructor
+    }
+
+    /**
+     * Construct this argument resolver, with the corresponding delegate for reading
+     * payload values as if they were annotated with @{@link RequestBody}.
+     */
     public JsonRequestBodyArgumentResolver(RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor) {
         this.requestResponseBodyMethodProcessor = requestResponseBodyMethodProcessor;
     }
 
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-        Object requestBodyAnnotatedReturnValue = this.requestResponseBodyMethodProcessor.resolveArgument(parameter, mavContainer, webRequest, binderFactory);
+        Object requestBodyAnnotatedReturnValue = readRequestBodyAnnotatedParameter(parameter, mavContainer, webRequest, binderFactory);
 
         String name = Conventions.getVariableNameForParameter(parameter);
         BindingResult bindingResult = (BindingResult) mavContainer.getModel().get(BindingResult.MODEL_KEY_PREFIX + name);
@@ -46,6 +70,20 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         validate(parameter, webRequest, bindingResult, isThrowingExceptionOnValidationError(parameter));
 
         return requestBodyAnnotatedReturnValue;
+    }
+
+    /**
+     * Reads the parameter value as if it was annotated by @{@link RequestBody}. Use the
+     * delegate argument resolver to do that
+     * @param parameter the parameter with {@link JsonRequestBody} annotation
+     * @param mavContainer the ModelAndViewContainer for the current request
+     * @param webRequest the current request
+     * @param binderFactory a factory for creating {@link WebDataBinder} instances
+     * @return the resolved argument value, or {@code null}
+     * @throws Exception in case of errors with the preparation of argument values
+     */
+    private Object readRequestBodyAnnotatedParameter(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+        return this.requestResponseBodyMethodProcessor.resolveArgument(parameter, mavContainer, webRequest, binderFactory);
     }
 
     private BindingResult createBindingResult(WebRequest webRequest) {
@@ -120,9 +158,20 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         return StreamUtils.copyToString(httpServletRequest.getInputStream(), StandardCharsets.UTF_8);
     }
 
+    /**
+     * Supports the @{@link JsonRequestBody}-annotated method parameters.
+     */
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(JsonRequestBody.class);
+    }
+
+    public void setRequestResponseBodyMethodProcessor(RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor) {
+        this.requestResponseBodyMethodProcessor = requestResponseBodyMethodProcessor;
+    }
+
+    public void setValidationExceptionMediator(ValidationExceptionMediator validationExceptionMediator) {
+        this.validationExceptionMediator = validationExceptionMediator;
     }
 
     /**
