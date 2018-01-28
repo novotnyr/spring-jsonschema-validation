@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.github.novotnyr.springframework.web.jsonschema.JsonSchemaValidationException;
 import com.github.novotnyr.springframework.web.jsonschema.UnavailableJsonSchemaException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -24,7 +25,7 @@ public class RestExceptionHandler {
     @ExceptionHandler
     @ResponseBody
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    public ApiError handleHttpMessageNotReadableException(Exception e) {
+    public ApiError handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         if (e.getCause() instanceof InvalidFormatException) {
             InvalidFormatException invalidFormatException = (InvalidFormatException) e.getCause();
             ApiError apiError = new ApiError();
