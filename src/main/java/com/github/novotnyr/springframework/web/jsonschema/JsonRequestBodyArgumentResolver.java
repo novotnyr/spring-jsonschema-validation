@@ -42,7 +42,7 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
             bindingResult = createBindingResult(webRequest);
             mavContainer.addAttribute(BindingResult.MODEL_KEY_PREFIX +  name, bindingResult);
         }
-        validate(parameter.getParameterAnnotation(JsonRequestBody.class), parameter, webRequest, bindingResult, isThrowingExceptionOnValidationError(parameter));
+        validate(parameter, webRequest, bindingResult, isThrowingExceptionOnValidationError(parameter));
 
         return requestBodyAnnotatedReturnValue;
     }
@@ -56,21 +56,20 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         return annotation.strict();
     }
 
-    private void validate(JsonRequestBody annotation, MethodParameter parameter, NativeWebRequest webRequest, BindingResult bindingResult, boolean throwExceptionOnValidationError) throws IOException {
+    private void validate(MethodParameter parameter, NativeWebRequest webRequest, BindingResult bindingResult, boolean throwExceptionOnValidationError) throws IOException {
         int allErrorsCount = bindingResult.getAllErrors().size();
         String json = getJsonPayload(webRequest);
 
-        validateRequestBody(json, annotation, parameter, bindingResult);
+        validateRequestBody(json, parameter, bindingResult);
 
         int newAllErrorsCount = bindingResult.getAllErrors().size();
-
         if (newAllErrorsCount > allErrorsCount && throwExceptionOnValidationError) {
             throw new JsonSchemaValidationException(bindingResult);
         }
     }
 
-    private void validateRequestBody(String json, JsonRequestBody validJsonSchema, MethodParameter methodParameter, BindingResult bindingResult) throws JsonSchemaException {
-        String schemaPath = discoverSchemaPath(validJsonSchema, methodParameter);
+    private void validateRequestBody(String json, MethodParameter methodParameter, BindingResult bindingResult) throws JsonSchemaException {
+        String schemaPath = discoverSchemaPath(methodParameter);
         try {
             ClassPathResource resource = new ClassPathResource(schemaPath);
             JSONObject rawSchema = new JSONObject(new JSONTokener(resource.getInputStream()));
@@ -93,8 +92,9 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
      * Generates full classpath to the schema path, either using autodetection
      * or explicit value from annotation.
      */
-    private String discoverSchemaPath(JsonRequestBody validJsonSchema, MethodParameter methodParameter) {
-        String schemaPath = validJsonSchema.schemaPath();
+    private String discoverSchemaPath(MethodParameter methodParameter) {
+        JsonRequestBody annotation = methodParameter.getParameterAnnotation(JsonRequestBody.class);
+        String schemaPath = annotation.schemaPath();
         if (! schemaPath.isEmpty()) {
             return "/" + schemaPath + ".json";
         } else {
