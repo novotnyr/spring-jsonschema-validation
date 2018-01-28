@@ -73,5 +73,19 @@ public class BoxControllerTest extends AbstractControllerTest {
                 .andExpect(status().is(200));
     }
 
+    @Test
+    public void testPostWithUnavailableSchema() throws Exception {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("name", "smelly stuff");
+
+        this.mvc.perform(
+                post("/unavailable-schema")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonObject.toString())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("error.validation.global[0].message").value("Internal validation error"))
+                .andDo(print())
+                .andExpect(status().is(422));
+    }
 
 }

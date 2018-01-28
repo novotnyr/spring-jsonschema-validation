@@ -3,6 +3,7 @@ package com.github.novotnyr.springframework;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.github.novotnyr.springframework.web.jsonschema.JsonSchemaValidationException;
+import com.github.novotnyr.springframework.web.jsonschema.UnavailableJsonSchemaException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +33,13 @@ public class RestExceptionHandler {
         } else {
             return new ApiError().addGlobalError("payload", e.getMessage());
         }
+    }
+
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ApiError handleUnavailableJsonSchemaException(UnavailableJsonSchemaException exception) {
+        return new ApiError().addGlobalError("payload", "Internal validation error");
     }
 
     private String getField(InvalidFormatException exception) {

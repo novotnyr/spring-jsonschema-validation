@@ -19,6 +19,11 @@ public class BoxController {
 
     }
 
+    @RequestMapping(method = RequestMethod.POST, value = "/unavailable-schema")
+    public void registerWithUnavailableSchema(@JsonRequestBody(schemaPath = "unavailable-schema") BoxRequest request) {
+
+    }
+
     @RequestMapping(method = RequestMethod.POST, value = "/boxes", params = {"errors"})
     public ApiError registerWithBodyAndErrors(@JsonRequestBody BoxRequest request, Errors errors) {
         Validator validator = new Validator() {

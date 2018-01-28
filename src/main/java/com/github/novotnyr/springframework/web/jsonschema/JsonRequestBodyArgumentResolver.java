@@ -9,6 +9,7 @@ import org.json.JSONTokener;
 import org.springframework.core.Conventions;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.AbstractBindingResult;
 import org.springframework.validation.BindingResult;
@@ -60,18 +61,29 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         int beforeSchemaValidationErrorCount = bindingResult.getErrorCount();
         String requestBodyJson = getJsonPayload(webRequest);
 
-        validateRequestBody(requestBodyJson, parameter, bindingResult);
+        Resource jsonSchemaResource = resolveJsonSchemaResource(parameter);
+        validateRequestBody(requestBodyJson, jsonSchemaResource, bindingResult);
 
         if (bindingResult.getErrorCount() > beforeSchemaValidationErrorCount && throwExceptionOnSchemaValidationError) {
             throw new JsonSchemaValidationException(bindingResult);
         }
     }
 
-    private void validateRequestBody(String json, MethodParameter methodParameter, BindingResult bindingResult) throws JsonSchemaException {
-        String schemaPath = discoverSchemaPath(methodParameter);
+    private Resource resolveJsonSchemaResource(MethodParameter methodParameter) {
+        JsonRequestBody annotation = methodParameter.getParameterAnnotation(JsonRequestBody.class);
+        String schemaPath = annotation.schemaPath();
+        if (! schemaPath.isEmpty()) {
+            return new ClassPathResource("/" + schemaPath + ".json");
+        } else {
+            String declaringClassName = methodParameter.getDeclaringClass().getSimpleName().toLowerCase();
+            String methodName = methodParameter.getMethod().getName();
+            return new ClassPathResource("/" + declaringClassName + "#" + methodName + ".json");
+        }
+    }
+
+    private void validateRequestBody(String json, Resource jsonSchemaResource, BindingResult bindingResult) throws JsonSchemaException {
         try {
-            ClassPathResource resource = new ClassPathResource(schemaPath);
-            JSONObject rawSchema = new JSONObject(new JSONTokener(resource.getInputStream()));
+            JSONObject rawSchema = new JSONObject(new JSONTokener(jsonSchemaResource.getInputStream()));
             JSONObject jsonObject = new JSONObject(new JSONTokener(json));
 
             SchemaLoader loader = SchemaLoader.builder()
@@ -83,7 +95,7 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         } catch (ValidationException e) {
             this.validationExceptionMediator.convert(e, bindingResult);
         } catch (IOException e) {
-            throw new JsonSchemaException("Unable to load JSON schema from '" + schemaPath + "'", e);
+            throw new UnavailableJsonSchemaException(jsonSchemaResource, e);
         }
     }
 
