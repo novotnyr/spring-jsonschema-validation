@@ -10,10 +10,11 @@ import org.springframework.core.Conventions;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StreamUtils;
+import org.springframework.validation.AbstractBindingResult;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor;
@@ -35,17 +36,19 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         Object requestBodyAnnotatedReturnValue = this.requestResponseBodyMethodProcessor.resolveArgument(parameter, mavContainer, webRequest, binderFactory);
 
-        WebDataBinder binder = binderFactory.createBinder(webRequest, new Object(), "request");
-
         String name = Conventions.getVariableNameForParameter(parameter);
         BindingResult bindingResult = (BindingResult) mavContainer.getModel().get(BindingResult.MODEL_KEY_PREFIX + name);
         if (bindingResult == null) {
-            bindingResult = binder.getBindingResult();
+            bindingResult = createBindingResult(webRequest);
             mavContainer.addAttribute(BindingResult.MODEL_KEY_PREFIX +  name, bindingResult);
         }
         validate(parameter.getParameterAnnotation(JsonRequestBody.class), parameter, webRequest, bindingResult, isThrowingExceptionOnValidationError(parameter));
 
         return requestBodyAnnotatedReturnValue;
+    }
+
+    private BindingResult createBindingResult(WebRequest webRequest) {
+        return new WebRequestBindingResult(webRequest);
     }
 
     private boolean isThrowingExceptionOnValidationError(MethodParameter parameter) {
@@ -109,5 +112,25 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(JsonRequestBody.class);
+    }
+
+    private static class WebRequestBindingResult extends AbstractBindingResult {
+
+        private final WebRequest webRequest;
+
+        protected WebRequestBindingResult(WebRequest webRequest) {
+            super("request");
+            this.webRequest = webRequest;
+        }
+
+        @Override
+        public WebRequest getTarget() {
+            return this.webRequest;
+        }
+
+        @Override
+        protected Object getActualFieldValue(String field) {
+            return this.webRequest.getParameter(field);
+        }
     }
 }
