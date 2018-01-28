@@ -1,0 +1,43 @@
+package com.github.novotnyr.springframework;
+
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.github.novotnyr.springframework.web.jsonschema.JsonSchemaValidationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import java.util.List;
+
+@ControllerAdvice
+public class RestExceptionHandler {
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ApiError handleJsonSchemaValidationException(JsonSchemaValidationException exception) {
+        return ApiError.of(exception.getBindingResult());
+    }
+
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ApiError handleHttpMessageNotReadableException(Exception e) {
+        if (e.getCause() instanceof InvalidFormatException) {
+            InvalidFormatException invalidFormatException = (InvalidFormatException) e.getCause();
+            ApiError apiError = new ApiError();
+            apiError.addFieldError(getField(invalidFormatException), "invalid-property", invalidFormatException.getOriginalMessage());
+            return apiError;
+        } else {
+            return new ApiError().addGlobalError("payload", e.getMessage());
+        }
+    }
+
+    private String getField(InvalidFormatException exception) {
+        List<JsonMappingException.Reference> path = exception.getPath();
+        JsonMappingException.Reference lastComponent = path.get(path.size() - 1);
+        return lastComponent.getFieldName();
+    }
+
+}

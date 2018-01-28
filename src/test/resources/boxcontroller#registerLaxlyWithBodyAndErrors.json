@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "description": "Box Controller DEMO POC",
+  "type": "object",
+  "properties": {
+    "count" : {
+      "type" : "number"
+    }
+  },
+  "required": ["count"]
+}
