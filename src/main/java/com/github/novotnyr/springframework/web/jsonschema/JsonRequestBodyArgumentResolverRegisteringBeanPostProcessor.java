@@ -9,8 +9,28 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBody
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Registers <code>{@link JsonRequestBodyArgumentResolver}</code>
+ * to <code>{@link RequestMappingHandlerAdapter}</code>
+ * to the proper place.
+ * <p>
+ *     Since {@link JsonRequestBodyArgumentResolver} depends
+ *     on the Jackson <code>@RequestBody</code>
+ *     argument resolver, we need to register this validating
+ *     argument resolver <i>after</i> the regular resolver.
+ * </p>
+ * <p>
+ *     Since default argument resolvers (including {@link RequestResponseBodyMethodProcessor})
+ *     are not beans, the proper order of initialization
+ *     is supported by using this {@link BeanPostProcessor}.
+ * </p>
+ */
 public class JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor implements BeanPostProcessor {
 
+    /**
+     * Registers the JSON validating argument after {@link HandlerMethodArgumentResolver}.
+     * @return the same bean, unchanged, unless it is {@link RequestMappingHandlerAdapter}.
+     */
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if (bean instanceof RequestMappingHandlerAdapter) {
@@ -30,6 +50,9 @@ public class JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor impleme
         return bean;
     }
 
+    /**
+     * Do not process beans in any special way before initialization.
+     */
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         return bean;

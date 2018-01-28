@@ -56,14 +56,13 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         return annotation.strict();
     }
 
-    private void validate(MethodParameter parameter, NativeWebRequest webRequest, BindingResult bindingResult, boolean throwExceptionOnValidationError) throws IOException {
-        int allErrorsCount = bindingResult.getAllErrors().size();
-        String json = getJsonPayload(webRequest);
+    private void validate(MethodParameter parameter, NativeWebRequest webRequest, BindingResult bindingResult, boolean throwExceptionOnSchemaValidationError) throws IOException {
+        int beforeSchemaValidationErrorCount = bindingResult.getErrorCount();
+        String requestBodyJson = getJsonPayload(webRequest);
 
-        validateRequestBody(json, parameter, bindingResult);
+        validateRequestBody(requestBodyJson, parameter, bindingResult);
 
-        int newAllErrorsCount = bindingResult.getAllErrors().size();
-        if (newAllErrorsCount > allErrorsCount && throwExceptionOnValidationError) {
+        if (bindingResult.getErrorCount() > beforeSchemaValidationErrorCount && throwExceptionOnSchemaValidationError) {
             throw new JsonSchemaValidationException(bindingResult);
         }
     }
@@ -114,6 +113,10 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         return parameter.hasParameterAnnotation(JsonRequestBody.class);
     }
 
+    /**
+     * Represents an internal binding result mapped
+     * over an existing HTTP request with JSON body.
+     */
     private static class WebRequestBindingResult extends AbstractBindingResult {
 
         private final WebRequest webRequest;

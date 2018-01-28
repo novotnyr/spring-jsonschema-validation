@@ -14,7 +14,7 @@ import org.springframework.web.context.WebApplicationContext;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = TestApplicationContext.class)
-public class AbstractControllerTest {
+public abstract class AbstractControllerTest {
     @Autowired
     private WebApplicationContext wac;
 

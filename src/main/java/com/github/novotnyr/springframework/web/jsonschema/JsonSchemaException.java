@@ -1,5 +1,8 @@
 package com.github.novotnyr.springframework.web.jsonschema;
 
+/**
+ * Indicates a general JSON Schema handling exception.
+ */
 public class JsonSchemaException extends RuntimeException {
 
     public JsonSchemaException() {
