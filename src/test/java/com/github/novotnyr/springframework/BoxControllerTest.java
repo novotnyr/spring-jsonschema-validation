@@ -12,6 +12,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class BoxControllerTest extends AbstractControllerTest {
 
     @Test
+    public void testPostOk() throws Exception {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("count", 1);
+
+        this.mvc.perform(
+                post("/boxes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonObject.toString())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().is(200));
+    }
+
+    @Test
     public void testPost() throws Exception {
         JSONObject jsonObject = new JSONObject();
 
