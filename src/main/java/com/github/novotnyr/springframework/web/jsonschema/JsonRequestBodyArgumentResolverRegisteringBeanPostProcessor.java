@@ -27,6 +27,22 @@ import java.util.List;
  */
 public class JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor implements BeanPostProcessor {
 
+    private JsonSchemaResolver jsonSchemaResolver;
+
+    /**
+     * Creates a new post processor with the default {@link ParamNameJsonSchemaResolver}
+     */
+    public JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor() {
+        this.jsonSchemaResolver = new ParamNameJsonSchemaResolver();
+    }
+
+    /**
+     * Creates a new post processor with the schema resolver passed as argument
+     */
+    public JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor(JsonSchemaResolver jsonSchemaResolver) {
+        this.jsonSchemaResolver = jsonSchemaResolver;
+    }
+
     /**
      * Registers the JSON validating argument after {@link HandlerMethodArgumentResolver}.
      * @return the same bean, unchanged, unless it is {@link RequestMappingHandlerAdapter}.
@@ -40,7 +56,8 @@ public class JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor impleme
             for (int i = 0; i < argumentResolvers.size(); i++) {
                 HandlerMethodArgumentResolver argumentResolver = argumentResolvers.get(i);
                 if (argumentResolver instanceof RequestResponseBodyMethodProcessor) {
-                    JsonRequestBodyArgumentResolver jsonRequestBodyArgumentResolver = new JsonRequestBodyArgumentResolver((RequestResponseBodyMethodProcessor) argumentResolver);
+                    JsonRequestBodyArgumentResolver jsonRequestBodyArgumentResolver
+                            = new JsonRequestBodyArgumentResolver((RequestResponseBodyMethodProcessor) argumentResolver, jsonSchemaResolver);
                     extendedArgumentResolverList.add(i + 1, jsonRequestBodyArgumentResolver);
                     break;
                 }
