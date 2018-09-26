@@ -4,8 +4,22 @@
   "type": "object",
   "properties": {
     "count" : {
-      "type" : "string"
+      "type" : "integer"
+    }, "inner" : {
+      "type": "object",
+      "properties": {
+        "innerId": {
+          "type": "string"
+        },
+        "innerName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "innerId",
+        "innerName"
+      ]
     }
   },
-  "required": ["count"]
+  "required": ["count", "inner"]
 }

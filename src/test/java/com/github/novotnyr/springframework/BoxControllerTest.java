@@ -15,6 +15,10 @@ public class BoxControllerTest extends AbstractControllerTest {
     public void testPostOk() throws Exception {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("count", 1);
+        JSONObject inner = new JSONObject();
+        jsonObject.put("inner", inner);
+        inner.put("innerId", "1");
+        inner.put("innerName", "innerN");
 
         this.mvc.perform(
                 post("/boxes")
@@ -23,6 +27,26 @@ public class BoxControllerTest extends AbstractControllerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().is(200));
+    }
+
+    @Test
+    public void testPostInner() throws Exception {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("count", 1);
+        JSONObject inner = new JSONObject();
+        jsonObject.put("inner", inner);
+
+        this.mvc.perform(
+                post("/boxes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonObject.toString())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(jsonPath("error.validation.field[0].code").value("required-field"))
+                .andExpect(jsonPath("error.validation.field[0].name").value("inner.innerId"))
+                .andExpect(jsonPath("error.validation.field[1].code").value("required-field"))
+                .andExpect(jsonPath("error.validation.field[1].name").value("inner.innerName"))
+                .andExpect(status().is(422));
     }
 
     @Test

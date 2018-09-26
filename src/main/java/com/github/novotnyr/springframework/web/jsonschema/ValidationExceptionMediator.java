@@ -49,7 +49,11 @@ public class ValidationExceptionMediator {
         int leftBracket = message.indexOf("[");
         int rightBracket = message.indexOf("]");
         String field = message.substring(leftBracket + 1, rightBracket);
-
+        String schemaLocation = exception.getSchemaLocation();
+        if (schemaLocation.contains("/")) {
+            String path = schemaLocation.substring(schemaLocation.lastIndexOf("/") + 1);
+            errors.setNestedPath(path);
+        }
         errors.rejectValue(field, "required-field", "Field is required");
     }
 }

@@ -32,4 +32,11 @@ public class BoxRequest {
     public UUID getId() {
         return id;
     }
+
+    private InnerBox inner;
+
+    public InnerBox getInner() {
+        return inner;
+    }
+
 }
