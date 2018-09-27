@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
 public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentResolver {
     private RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor;
 
-    private ValidationExceptionMediator validationExceptionMediator = new ValidationExceptionMediator();
+    private ValidationExceptionMediator validationExceptionMediator = new DetailsValidationExceptionMediator();
 
     /**
      * Component in charge of resolve schemas
@@ -72,6 +72,19 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
                                            JsonSchemaResolver jsonSchemaResolver) {
         this.requestResponseBodyMethodProcessor = requestResponseBodyMethodProcessor;
         this.jsonSchemaResolver = jsonSchemaResolver;
+    }
+
+    /**
+     * Construct this argument resolver, with the corresponding delegate for reading
+     * payload values as if they were annotated with @{@link RequestBody}. Passing the json schema resolver
+     * as argument and mediator.
+     */
+    public JsonRequestBodyArgumentResolver(RequestResponseBodyMethodProcessor argumentResolver,
+                                           JsonSchemaResolver jsonSchemaResolver,
+                                           ValidationExceptionMediator validationExceptionMediator) {
+        this(argumentResolver, jsonSchemaResolver);
+        this.validationExceptionMediator = validationExceptionMediator;
+
     }
 
     @Override
