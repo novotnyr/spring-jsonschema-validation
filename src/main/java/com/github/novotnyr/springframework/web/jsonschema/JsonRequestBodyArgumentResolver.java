@@ -8,7 +8,6 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.springframework.core.Conventions;
 import org.springframework.core.MethodParameter;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.AbstractBindingResult;
@@ -40,7 +39,12 @@ import java.nio.charset.StandardCharsets;
 public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentResolver {
     private RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor;
 
-    private ValidationExceptionMediator validationExceptionMediator = new ValidationExceptionMediator();
+    private ValidationExceptionMediator validationExceptionMediator = new DetailsValidationExceptionMediator();
+
+    /**
+     * Component in charge of resolve schemas
+     */
+    private JsonSchemaResolver jsonSchemaResolver;
 
     /**
      * Empty constructor.
@@ -51,10 +55,36 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
 
     /**
      * Construct this argument resolver, with the corresponding delegate for reading
-     * payload values as if they were annotated with @{@link RequestBody}.
+     * payload values as if they were annotated with @{@link RequestBody}. Uses the default json schema resolver.
      */
     public JsonRequestBodyArgumentResolver(RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor) {
         this.requestResponseBodyMethodProcessor = requestResponseBodyMethodProcessor;
+        this.jsonSchemaResolver = new ParamNameJsonSchemaResolver();
+    }
+
+
+    /**
+     * Construct this argument resolver, with the corresponding delegate for reading
+     * payload values as if they were annotated with @{@link RequestBody}. Passing the json schema resolver
+     * as argument.
+     */
+    public JsonRequestBodyArgumentResolver(RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor,
+                                           JsonSchemaResolver jsonSchemaResolver) {
+        this.requestResponseBodyMethodProcessor = requestResponseBodyMethodProcessor;
+        this.jsonSchemaResolver = jsonSchemaResolver;
+    }
+
+    /**
+     * Construct this argument resolver, with the corresponding delegate for reading
+     * payload values as if they were annotated with @{@link RequestBody}. Passing the json schema resolver
+     * as argument and mediator.
+     */
+    public JsonRequestBodyArgumentResolver(RequestResponseBodyMethodProcessor argumentResolver,
+                                           JsonSchemaResolver jsonSchemaResolver,
+                                           ValidationExceptionMediator validationExceptionMediator) {
+        this(argumentResolver, jsonSchemaResolver);
+        this.validationExceptionMediator = validationExceptionMediator;
+
     }
 
     @Override
@@ -99,7 +129,7 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         int beforeSchemaValidationErrorCount = bindingResult.getErrorCount();
         String requestBodyJson = getJsonPayload(webRequest);
 
-        Resource jsonSchemaResource = resolveJsonSchemaResource(parameter);
+        Resource jsonSchemaResource = jsonSchemaResolver.resolveJsonSchemaResource(parameter, webRequest);
         validateRequestBody(requestBodyJson, jsonSchemaResource, bindingResult);
 
         if (bindingResult.getErrorCount() > beforeSchemaValidationErrorCount && throwExceptionOnSchemaValidationError) {
@@ -107,17 +137,7 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
         }
     }
 
-    private Resource resolveJsonSchemaResource(MethodParameter methodParameter) {
-        JsonRequestBody annotation = methodParameter.getParameterAnnotation(JsonRequestBody.class);
-        String schemaPath = annotation.schemaPath();
-        if (! schemaPath.isEmpty()) {
-            return new ClassPathResource("/" + schemaPath + ".json");
-        } else {
-            String declaringClassName = methodParameter.getDeclaringClass().getSimpleName().toLowerCase();
-            String methodName = methodParameter.getMethod().getName();
-            return new ClassPathResource("/" + declaringClassName + "#" + methodName + ".json");
-        }
-    }
+
 
     private void validateRequestBody(String json, Resource jsonSchemaResource, BindingResult bindingResult) throws JsonSchemaException {
         try {

@@ -27,6 +27,29 @@ import java.util.List;
  */
 public class JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor implements BeanPostProcessor {
 
+    private JsonSchemaResolver jsonSchemaResolver;
+
+    private ValidationExceptionMediator validationExceptionMediator;
+
+
+    /**
+     * Creates a new post processor with the default {@link ParamNameJsonSchemaResolver}
+     */
+    public JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor() {
+        this.jsonSchemaResolver = new ParamNameJsonSchemaResolver();
+        this.validationExceptionMediator = new DetailsValidationExceptionMediator();
+
+    }
+
+    /**
+     * Creates a new post processor with the schema resolver and exception mediator passed as arguments
+     */
+    public JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor(JsonSchemaResolver jsonSchemaResolver,
+                                                       ValidationExceptionMediator validationExceptionMediator) {
+        this.jsonSchemaResolver = jsonSchemaResolver;
+        this.validationExceptionMediator = validationExceptionMediator;
+    }
+
     /**
      * Registers the JSON validating argument after {@link HandlerMethodArgumentResolver}.
      * @return the same bean, unchanged, unless it is {@link RequestMappingHandlerAdapter}.
@@ -40,7 +63,10 @@ public class JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor impleme
             for (int i = 0; i < argumentResolvers.size(); i++) {
                 HandlerMethodArgumentResolver argumentResolver = argumentResolvers.get(i);
                 if (argumentResolver instanceof RequestResponseBodyMethodProcessor) {
-                    JsonRequestBodyArgumentResolver jsonRequestBodyArgumentResolver = new JsonRequestBodyArgumentResolver((RequestResponseBodyMethodProcessor) argumentResolver);
+                    JsonRequestBodyArgumentResolver jsonRequestBodyArgumentResolver
+                            = new JsonRequestBodyArgumentResolver(
+                                    (RequestResponseBodyMethodProcessor) argumentResolver,
+                                    jsonSchemaResolver, validationExceptionMediator);
                     extendedArgumentResolverList.add(i + 1, jsonRequestBodyArgumentResolver);
                     break;
                 }
