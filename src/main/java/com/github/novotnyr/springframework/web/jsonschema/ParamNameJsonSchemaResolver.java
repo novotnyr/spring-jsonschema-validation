@@ -7,7 +7,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.context.request.NativeWebRequest;
 
 /**
- * Json schema resolver that resolves based on controller method name
+ * JSON schema resolver that resolves schema {@link Resource} by evaluating controller method name
  */
 public class ParamNameJsonSchemaResolver implements JsonSchemaResolver {
     public Resource resolveJsonSchemaResource(MethodParameter methodParameter, NativeWebRequest webRequest) {

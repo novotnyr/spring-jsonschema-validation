@@ -55,13 +55,11 @@ public class JsonRequestBodyArgumentResolver implements HandlerMethodArgumentRes
 
     /**
      * Construct this argument resolver, with the corresponding delegate for reading
-     * payload values as if they were annotated with @{@link RequestBody}. Uses the default json schema resolver.
+     * payload values as if they were annotated with @{@link RequestBody}. Uses the default JSON schema resolver.
      */
     public JsonRequestBodyArgumentResolver(RequestResponseBodyMethodProcessor requestResponseBodyMethodProcessor) {
-        this.requestResponseBodyMethodProcessor = requestResponseBodyMethodProcessor;
-        this.jsonSchemaResolver = new ParamNameJsonSchemaResolver();
+        this(requestResponseBodyMethodProcessor, new ParamNameJsonSchemaResolver());
     }
-
 
     /**
      * Construct this argument resolver, with the corresponding delegate for reading

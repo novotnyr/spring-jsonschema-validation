@@ -66,7 +66,8 @@ public class JsonRequestBodyArgumentResolverRegisteringBeanPostProcessor impleme
                     JsonRequestBodyArgumentResolver jsonRequestBodyArgumentResolver
                             = new JsonRequestBodyArgumentResolver(
                                     (RequestResponseBodyMethodProcessor) argumentResolver,
-                                    jsonSchemaResolver, validationExceptionMediator);
+                                    this.jsonSchemaResolver,
+                                    this.validationExceptionMediator);
                     extendedArgumentResolverList.add(i + 1, jsonRequestBodyArgumentResolver);
                     break;
                 }
