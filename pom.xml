@@ -9,7 +9,7 @@
     <version>0.1-SNAPSHOT</version>
 
     <properties>
-        <spring.version>5.0.9.RELEASE</spring.version>
+        <spring.version>5.2.3.RELEASE</spring.version>
     </properties>
     <build>
         <plugins>
